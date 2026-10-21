@@ -146,6 +146,9 @@ jobs:
           sed -e "s|\"[^\"]*/$PROFILE-kernel.bin\"|\"$PWD/kernel.lzma\"|" \
               -e "s|\"[^\"]*/image-|\"$PWD/$KDIR/image-|" "$ITS" > kernel.its
           grep incbin kernel.its
+          # reuse the official FIT's timestamp so rebuilds are byte-identical
+          export SOURCE_DATE_EPOCH=$(fdtget -t u "$KDIR/$PROFILE-kernel.bin" / timestamp)
+          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH ($(date -ud @$SOURCE_DATE_EPOCH))"
           "$HOST/mkimage" -f kernel.its "$KDIR/$PROFILE-kernel.bin"
 
       - name: Raise IMAGE_SIZE
