@@ -14,7 +14,7 @@ with the official ImageBuilder whenever a new OpenWrt stable release appears.
 | Image | Board | Modification | Patch |
 |---|---|---|---|
 | `*cudy_wr3000-v1-64mb-squashfs-sysupgrade.bin` | Cudy WR3000 v1 | 16 MB NOR replaced by 64 MB NOR | [patches/Cudy-WR3000-64MB-V1.patch](patches/Cudy-WR3000-64MB-V1.patch) |
-| `*netis_nx32u-v2-squashfs-sysupgrade.itb` | netis NX30 V2 | USB port soldered (USB 2.0, VBUS on GPIO 14) | [patches/Netis-NX30U-v2.patch](patches/Netis-NX30U-v2.patch) |
+| `*netis_nx30u-v2-squashfs-sysupgrade.itb` | netis NX30 V2 | USB port soldered (USB 2.0, VBUS on GPIO 14) | [patches/Netis-NX30U-v2.patch](patches/Netis-NX30U-v2.patch) |
 
 Download images from [Releases](../../releases). **Only flash the image matching your mod.**
 

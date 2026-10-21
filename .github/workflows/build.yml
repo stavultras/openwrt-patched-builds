@@ -71,7 +71,7 @@ jobs:
           - name: netis NX30 v2 (USB soldered)
             id: nx30v2-usb
             profile: netis_nx30v2
-            image_name: netis_nx32u-v2
+            image_name: netis_nx30u-v2
             dtb: mt7981b-netis-nx30v2
             patch: patches/Netis-NX30U-v2.patch
             overlay: overlays/netis-nx30v2-usb.dtso
@@ -199,7 +199,7 @@ jobs:
           Unofficial OpenWrt builds for modified hardware. Flash only the image that matches your mod.
 
           - `*cudy_wr3000-v1-64mb-squashfs-sysupgrade.bin`: Cudy WR3000 v1 with the 16 MB NOR replaced by a **64 MB** NOR. Do NOT flash on stock 16 MB boards.
-          - `*netis_nx32u-v2-squashfs-sysupgrade.itb`: netis NX30 V2 with a **soldered USB port** (USB 2.0, VBUS on GPIO 14). Includes kmod-usb3.
+          - `*netis_nx30u-v2-squashfs-sysupgrade.itb`: netis NX30 V2 with a **soldered USB port** (USB 2.0, VBUS on GPIO 14). Includes kmod-usb3.
 
           Both images include LuCI. Attended Sysupgrade is intentionally left out: it would install stock images and undo the mods.
 
