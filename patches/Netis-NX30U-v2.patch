@@ -1,0 +1,58 @@
+From 45dcca3bc409acedd3470bda426eb06da349f1e8 Mon Sep 17 00:00:00 2001
+From: Dmitry Mostovoy <stavultras@gmail.com>
+Date: Wed, 21 Oct 2026 01:18:04 -0400
+Subject: [PATCH] Netis NX30U v2
+
+---
+ .../mediatek/dts/mt7981b-netis-nx30v2.dts     | 23 ++++++++++++++++++-
+ 1 file changed, 22 insertions(+), 1 deletion(-)
+
+diff --git a/target/linux/mediatek/dts/mt7981b-netis-nx30v2.dts b/target/linux/mediatek/dts/mt7981b-netis-nx30v2.dts
+index 1e3a6b5577..80fb2ef3cc 100644
+--- a/target/linux/mediatek/dts/mt7981b-netis-nx30v2.dts
++++ b/target/linux/mediatek/dts/mt7981b-netis-nx30v2.dts
+@@ -4,7 +4,7 @@
+ #include "mt7981b-netis-common.dtsi"
+ 
+ / {
+-	model = "netis NX30 V2";
++	model = "netis NX30U V2";
+ 	compatible = "netis,nx30v2", "mediatek,mt7981";
+ 
+ 	aliases {
+@@ -57,6 +57,16 @@
+ 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_vbus: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vbus";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		gpios = <&pio 14 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++		regulator-boot-on;
++	};
+ };
+ 
+ &switch {
+@@ -77,3 +87,14 @@
+ 		};
+ 	};
+ };
++
++&xhci {
++	vbus-supply = <&usb_vbus>;
++	mediatek,u3p-dis-msk = <0x01>;
++	phys = <&u2port0 PHY_TYPE_USB2>;
++	status = "okay";
++};
++
++&usb_phy {
++	status = "okay";
++};
+\ No newline at end of file
+-- 
+2.39.5
+

@@ -1,0 +1,28 @@
+// Same changes as patches/Netis-NX30U-v2.patch, applied to the stock DTB
+/dts-v1/;
+/plugin/;
+
+&{/} {
+	model = "netis NX30U V2";
+
+	usb_vbus: regulator-usb {
+		compatible = "regulator-fixed";
+		regulator-name = "usb-vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&pio 14 0>;	/* GPIO_ACTIVE_HIGH */
+		enable-active-high;
+		regulator-boot-on;
+	};
+};
+
+&xhci {
+	vbus-supply = <&usb_vbus>;
+	mediatek,u3p-dis-msk = <0x01>;
+	phys = <&u2port0 3>;	/* PHY_TYPE_USB2 */
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};

@@ -1,0 +1,11 @@
+// Same changes as patches/Cudy-WR3000-64MB-V1.patch, applied to the stock DTB
+/dts-v1/;
+/plugin/;
+
+&{/} {
+	model = "Cudy WR3000 64MB v1";
+};
+
+&{/soc/spi@11009000/flash@0/partitions/partition@f0000} {
+	reg = <0xf0000 0x3f10000>;
+};

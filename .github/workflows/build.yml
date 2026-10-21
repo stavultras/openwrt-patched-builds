@@ -1,0 +1,212 @@
+name: Build patched OpenWrt images
+
+on:
+  schedule:
+    - cron: '17 3 * * *'        # daily, 03:17 UTC (06:17 Moscow)
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'OpenWrt version (empty = latest stable)'
+        required: false
+      force:
+        description: 'Rebuild even if a release already exists'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: write                # keepalive: re-enable this workflow via the API
+
+env:
+  TARGET: mediatek/filogic
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      skip: ${{ steps.ver.outputs.skip }}
+    steps:
+      # GitHub disables scheduled workflows after 60 days without repo activity.
+      # Re-enabling the (still enabled) workflow every run resets that timer.
+      - name: Keepalive
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/$GITHUB_REPOSITORY/actions/workflows/build.yml/enable" || echo "::warning::keepalive failed"
+
+      - name: Find version
+        id: ver
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER="${{ inputs.version }}"
+          [ -z "$VER" ] && VER=$(curl -fsSL https://downloads.openwrt.org/.versions.json | jq -r .stable_version)
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          if gh release view "v$VER" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 && [ "${{ inputs.force }}" != "true" ]; then
+            echo "Release v$VER already exists, skipping"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: version
+    if: needs.version.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Cudy WR3000 v1 (64 MB NOR)
+            id: wr3000-64m
+            profile: cudy_wr3000-v1
+            image_name: cudy_wr3000-v1-64mb   # replaces the profile name in the output file name
+            dtb: mt7981b-cudy-wr3000-v1
+            patch: patches/Cudy-WR3000-64MB-V1.patch
+            overlay: overlays/cudy-wr3000-v1-64m.dtso
+            image_size: 64576k        # 0x3f10000 "firmware" partition, was 15424k
+            packages: 'luci'          # IB defaults lack LuCI; no luci-app-attendedsysupgrade (it would fetch stock images)
+            checks: |
+              / model Cudy WR3000 64MB v1
+              /soc/spi@11009000/flash@0/partitions/partition@f0000 reg 983040 66125824
+          - name: netis NX30 v2 (USB soldered)
+            id: nx30v2-usb
+            profile: netis_nx30v2
+            image_name: netis_nx32u-v2
+            dtb: mt7981b-netis-nx30v2
+            patch: patches/Netis-NX30U-v2.patch
+            overlay: overlays/netis-nx30v2-usb.dtso
+            image_size: ''
+            packages: 'luci kmod-usb3' # kmod-usb3 = xhci-mtk driver; add kmod-usb-storage etc. as needed
+            checks: |
+              / model netis NX30U V2
+              /regulator-usb regulator-name usb-vbus
+              /soc/usb@11200000 status okay
+              /soc/usb-phy@11e10000 status okay
+    name: ${{ matrix.name }}
+    env:
+      VER: ${{ needs.version.outputs.version }}
+      PROFILE: ${{ matrix.profile }}
+      DTB_NAME: ${{ matrix.dtb }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y device-tree-compiler zstd
+
+      # The DTB is edited with an overlay, so make sure the patch it mirrors
+      # still applies to this release's DTS. If it doesn't, upstream changed
+      # the board and the overlay must be reviewed.
+      - name: Check patch against upstream DTS
+        run: |
+          mkdir upstream
+          for f in $(sed -n 's|^+++ b/||p' "${{ matrix.patch }}"); do
+            mkdir -p "upstream/$(dirname "$f")"
+            curl -fsSL "https://raw.githubusercontent.com/openwrt/openwrt/v$VER/$f" -o "upstream/$f"
+          done
+          patch -d upstream -p1 --dry-run < "${{ matrix.patch }}"
+
+      - name: Download ImageBuilder
+        run: |
+          BASE="https://downloads.openwrt.org/releases/$VER/targets/$TARGET"
+          NAME="openwrt-imagebuilder-$VER-${TARGET/\//-}.Linux-x86_64"
+          curl -fLO "$BASE/$NAME.tar.zst" || curl -fLO "$BASE/$NAME.tar.xz"
+          mkdir ib && tar -xaf "$NAME".tar.* -C ib --strip-components=1
+
+      - name: Patch DTB
+        working-directory: ib
+        run: |
+          DTB=$(find build_dir -name "image-$DTB_NAME.dtb" | head -n1)
+          [ -n "$DTB" ] || { echo "DTB not found"; exit 1; }
+          dtc -q -@ -I dts -O dtb -o overlay.dtbo "$GITHUB_WORKSPACE/${{ matrix.overlay }}"
+          dtc -q -I dtb -O dts -o before.dts "$DTB"
+          fdtoverlay -i "$DTB" -o patched.dtb overlay.dtbo
+          dtc -q -I dtb -O dts -o after.dts patched.dtb
+          diff -u before.dts after.dts || true
+          while read -r node prop want; do
+            [ -n "$node" ] || continue
+            got=$(fdtget patched.dtb "$node" "$prop")
+            [ "$got" = "$want" ] || { echo "$node $prop: got '$got', want '$want'"; exit 1; }
+          done <<< "${{ matrix.checks }}"
+          cp patched.dtb "$DTB"
+
+      # ImageBuilder never rebuilds the kernel, so profiles whose prebuilt
+      # kernel FIT already embeds the DTB (e.g. cudy_wr3000-v1) would ship the
+      # stock DTB. Rebuild that FIT from the shipped .its with our DTB.
+      - name: Rebuild kernel FIT
+        working-directory: ib
+        run: |
+          KDIR=$(dirname "$(find build_dir -name "image-$DTB_NAME.dtb" | head -n1)")
+          ITS="$KDIR/$PROFILE-kernel.bin.its"
+          if [ ! -f "$ITS" ] || ! grep -q "image-$DTB_NAME.dtb" "$ITS"; then
+            echo "Kernel image does not embed the DTB, nothing to do"
+            exit 0
+          fi
+          HOST=$PWD/staging_dir/host/bin
+          "$HOST/lzma" e "$KDIR/Image" -lc1 -lp2 -pb2 kernel.lzma
+          sed -e "s|\"[^\"]*/$PROFILE-kernel.bin\"|\"$PWD/kernel.lzma\"|" \
+              -e "s|\"[^\"]*/image-|\"$PWD/$KDIR/image-|" "$ITS" > kernel.its
+          grep incbin kernel.its
+          "$HOST/mkimage" -f kernel.its "$KDIR/$PROFILE-kernel.bin"
+
+      - name: Raise IMAGE_SIZE
+        if: matrix.image_size != ''
+        working-directory: ib
+        run: |
+          sed -i "/^define Device\/$PROFILE\$/,/^endef/ s/^\(\s*IMAGE_SIZE :=\).*/\1 ${{ matrix.image_size }}/" target/linux/mediatek/image/filogic.mk
+          sed -n "/^define Device\/$PROFILE\$/,/^endef/p" target/linux/mediatek/image/filogic.mk
+          grep -q "IMAGE_SIZE := ${{ matrix.image_size }}" target/linux/mediatek/image/filogic.mk || { echo "IMAGE_SIZE patch failed"; exit 1; }
+
+      - name: Build image
+        working-directory: ib
+        run: make image PROFILE="$PROFILE" PACKAGES="${{ matrix.packages }}"
+
+      - name: Collect images
+        run: |
+          mkdir out
+          for f in ib/bin/targets/$TARGET/*"$PROFILE"*sysupgrade*; do
+            f=$(basename "$f")
+            cp "ib/bin/targets/$TARGET/$f" "out/${f/$PROFILE/${{ matrix.image_name }}}"
+          done
+          ls -l out
+          # the DTB is stored uncompressed in the FIT, so it must appear verbatim
+          python3 -c 'import sys; img=open(sys.argv[1],"rb").read(); sys.exit(img.find(open(sys.argv[2],"rb").read()) < 0)' \
+            out/*sysupgrade* ib/patched.dtb || { echo "Image does not contain the patched DTB"; exit 1; }
+          echo "Image contains the patched DTB"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.id }}
+          path: out/*
+
+  release:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VER: ${{ needs.version.outputs.version }}
+        run: |
+          cd out
+          sha256sum * > sha256sums
+          cat sha256sums
+          cat > notes.md <<'EOF'
+          Unofficial OpenWrt builds for modified hardware. Flash only the image that matches your mod.
+
+          - `*cudy_wr3000-v1-64mb-squashfs-sysupgrade.bin`: Cudy WR3000 v1 with the 16 MB NOR replaced by a **64 MB** NOR. Do NOT flash on stock 16 MB boards.
+          - `*netis_nx32u-v2-squashfs-sysupgrade.itb`: netis NX30 V2 with a **soldered USB port** (USB 2.0, VBUS on GPIO 14). Includes kmod-usb3.
+
+          Both images include LuCI. Attended Sysupgrade is intentionally left out: it would install stock images and undo the mods.
+
+          **Unofficial, use at your own risk, no warranty.** Not supported by OpenWrt, Cudy or netis. See the README for details. License: GPL-2.0.
+          EOF
+          gh release delete "v$VER" -R "$GITHUB_REPOSITORY" -y --cleanup-tag 2>/dev/null || true
+          gh release create "v$VER" -R "$GITHUB_REPOSITORY" \
+            --title "OpenWrt $VER — patched builds" \
+            --notes-file notes.md \
+            *sysupgrade* sha256sums

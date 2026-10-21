@@ -1,0 +1,5 @@
+# built images go to GitHub Releases, never into the repo
+test-images/
+*.itb
+*.bin
+sha256sums

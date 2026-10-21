@@ -1,0 +1,34 @@
+From 8843fd33cc0062a91bb6d765169845636a1397e2 Mon Sep 17 00:00:00 2001
+From: Dmitry Mostovoy <stavultras@gmail.com>
+Date: Wed, 21 Oct 2026 01:19:37 -0400
+Subject: [PATCH] Cudy WR3000 64MB V1
+
+---
+ target/linux/mediatek/dts/mt7981b-cudy-wr3000-v1.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/target/linux/mediatek/dts/mt7981b-cudy-wr3000-v1.dts b/target/linux/mediatek/dts/mt7981b-cudy-wr3000-v1.dts
+index 72491d0d2e..03e6ae2035 100644
+--- a/target/linux/mediatek/dts/mt7981b-cudy-wr3000-v1.dts
++++ b/target/linux/mediatek/dts/mt7981b-cudy-wr3000-v1.dts
+@@ -8,7 +8,7 @@
+ #include "mt7981b.dtsi"
+ 
+ / {
+-	model = "Cudy WR3000 v1";
++	model = "Cudy WR3000 64MB v1";
+ 	compatible = "cudy,wr3000-v1", "mediatek,mt7981";
+ 
+ 	aliases {
+@@ -193,7 +193,7 @@
+ 			partition@f0000 {
+ 				compatible = "denx,fit";
+ 				label = "firmware";
+-				reg = <0xf0000 0xf10000>;
++				reg = <0xf0000 0x3f10000>;
+ 			};
+ 		};
+ 	};
+-- 
+2.39.5
+
