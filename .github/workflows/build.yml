@@ -17,9 +17,6 @@ permissions:
   contents: write
   actions: write                # keepalive: re-enable this workflow via the API
 
-env:
-  TARGET: mediatek/filogic
-
 jobs:
   version:
     runs-on: ubuntu-latest
@@ -58,11 +55,13 @@ jobs:
         include:
           - name: Cudy WR3000 v1 (64 MB NOR)
             id: wr3000-64m
+            target: mediatek/filogic
             profile: cudy_wr3000-v1
-            image_name: cudy_wr3000-v1-64mb   # replaces the profile name in the output file name
+            image_name: cudy_wr3000-64mb-v1   # replaces the profile name in the output file name
             dtb: mt7981b-cudy-wr3000-v1
             patch: patches/Cudy-WR3000-64MB-V1.patch
             overlay: overlays/cudy-wr3000-v1-64m.dtso
+            kernel: fit               # prebuilt kernel FIT embeds the DTB, rebuild it
             image_size: 64576k        # 0x3f10000 "firmware" partition, was 15424k
             packages: 'luci'          # IB defaults lack LuCI; no luci-app-attendedsysupgrade (it would fetch stock images)
             checks: |
@@ -70,11 +69,13 @@ jobs:
               /soc/spi@11009000/flash@0/partitions/partition@f0000 reg 983040 66125824
           - name: netis NX30 v2 (USB soldered)
             id: nx30v2-usb
+            target: mediatek/filogic
             profile: netis_nx30v2
-            image_name: netis_nx30u-v2
+            image_name: netis_nx30-usb-v2
             dtb: mt7981b-netis-nx30v2
             patch: patches/Netis-NX30U-v2.patch
             overlay: overlays/netis-nx30v2-usb.dtso
+            kernel: ''                # DTB goes into the sysupgrade FIT directly
             image_size: ''
             packages: 'luci kmod-usb3' # kmod-usb3 = xhci-mtk driver; add kmod-usb-storage etc. as needed
             checks: |
@@ -82,9 +83,42 @@ jobs:
               /regulator-usb regulator-name usb-vbus
               /soc/usb@11200000 status okay
               /soc/usb-phy@11e10000 status okay
+          - name: Xiaomi Mi Router 4A Gigabit v2 (32 MB NOR)
+            id: r4a-gigabit-v2-32m
+            target: ramips/mt7621
+            profile: xiaomi_mi-router-4a-gigabit-v2
+            image_name: xiaomi_mi-router-4a-gigabit-32mb-v2
+            dtb: mt7621_xiaomi_mi-router-4a-gigabit-v2
+            patch: patches/Xiaomi-R4A-Gigabit-32MB-V2.patch
+            overlay: overlays/xiaomi-r4a-gigabit-v2-32mb.dtso
+            kernel: lzma-loader       # DTB is appended to the compressed kernel
+            delete_nodes: |
+              /palmbus@1e000000/spi@b00/flash@0/partitions/partition@ff0000
+            image_size: 31232k          # 0x1e80000 "firmware" partition, was 14784k
+            packages: 'luci'
+            checks: |
+              / model Xiaomi Mi Router 4A Gigabit Edition 32MB v2
+              /palmbus@1e000000/spi@b00/flash@0/partitions/partition@180000 reg 1572864 31981568
+          - name: Xiaomi Mi Router 4A Gigabit v2 (64 MB NOR)
+            id: r4a-gigabit-v2-64m
+            target: ramips/mt7621
+            profile: xiaomi_mi-router-4a-gigabit-v2
+            image_name: xiaomi_mi-router-4a-gigabit-64mb-v2
+            dtb: mt7621_xiaomi_mi-router-4a-gigabit-v2
+            patch: patches/Xiaomi-R4A-Gigabit-64MB-V2.patch
+            overlay: overlays/xiaomi-r4a-gigabit-v2-64mb.dtso
+            kernel: lzma-loader       # DTB is appended to the compressed kernel
+            delete_nodes: |
+              /palmbus@1e000000/spi@b00/flash@0/partitions/partition@ff0000
+            image_size: 64000k          # 0x3e80000 "firmware" partition, was 14784k
+            packages: 'luci'
+            checks: |
+              / model Xiaomi Mi Router 4A Gigabit Edition 64MB v2
+              /palmbus@1e000000/spi@b00/flash@0/partitions/partition@180000 reg 1572864 65536000
     name: ${{ matrix.name }}
     env:
       VER: ${{ needs.version.outputs.version }}
+      TARGET: ${{ matrix.target }}
       PROFILE: ${{ matrix.profile }}
       DTB_NAME: ${{ matrix.dtb }}
     steps:
@@ -120,6 +154,11 @@ jobs:
           dtc -q -@ -I dts -O dtb -o overlay.dtbo "$GITHUB_WORKSPACE/${{ matrix.overlay }}"
           dtc -q -I dtb -O dts -o before.dts "$DTB"
           fdtoverlay -i "$DTB" -o patched.dtb overlay.dtbo
+          while read -r node; do
+            [ -n "$node" ] || continue
+            fdtput -r patched.dtb "$node"
+            ! fdtget -l patched.dtb "$node" >/dev/null 2>&1 || { echo "failed to delete $node"; exit 1; }
+          done <<< "${{ matrix.delete_nodes }}"
           dtc -q -I dtb -O dts -o after.dts patched.dtb
           diff -u before.dts after.dts || true
           while read -r node prop want; do
@@ -130,34 +169,43 @@ jobs:
           cp patched.dtb "$DTB"
 
       # ImageBuilder never rebuilds the kernel, so profiles whose prebuilt
-      # kernel FIT already embeds the DTB (e.g. cudy_wr3000-v1) would ship the
-      # stock DTB. Rebuild that FIT from the shipped .its with our DTB.
-      - name: Rebuild kernel FIT
+      # kernel embeds the DTB would ship the stock DTB:
+      # - fit: rebuild the kernel FIT from the shipped .its with our DTB
+      # - lzma-loader: swap the LZMA(vmlinux + DTB) inside the prebuilt loader
+      - name: Rebuild kernel
+        if: matrix.kernel != ''
         working-directory: ib
         run: |
           KDIR=$(dirname "$(find build_dir -name "image-$DTB_NAME.dtb" | head -n1)")
-          ITS="$KDIR/$PROFILE-kernel.bin.its"
-          if [ ! -f "$ITS" ] || ! grep -q "image-$DTB_NAME.dtb" "$ITS"; then
-            echo "Kernel image does not embed the DTB, nothing to do"
-            exit 0
-          fi
           HOST=$PWD/staging_dir/host/bin
-          "$HOST/lzma" e "$KDIR/Image" -lc1 -lp2 -pb2 kernel.lzma
-          sed -e "s|\"[^\"]*/$PROFILE-kernel.bin\"|\"$PWD/kernel.lzma\"|" \
-              -e "s|\"[^\"]*/image-|\"$PWD/$KDIR/image-|" "$ITS" > kernel.its
-          grep incbin kernel.its
-          # reuse the official FIT's timestamp so rebuilds are byte-identical
-          export SOURCE_DATE_EPOCH=$(fdtget -t u "$KDIR/$PROFILE-kernel.bin" / timestamp)
-          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH ($(date -ud @$SOURCE_DATE_EPOCH))"
-          "$HOST/mkimage" -f kernel.its "$KDIR/$PROFILE-kernel.bin"
+          case "${{ matrix.kernel }}" in
+          fit)
+            ITS="$KDIR/$PROFILE-kernel.bin.its"
+            grep -q "image-$DTB_NAME.dtb" "$ITS" || { echo "$ITS does not use the DTB"; exit 1; }
+            "$HOST/lzma" e "$KDIR/Image" -lc1 -lp2 -pb2 kernel.lzma
+            sed -e "s|\"[^\"]*/$PROFILE-kernel.bin\"|\"$PWD/kernel.lzma\"|" \
+                -e "s|\"[^\"]*/image-|\"$PWD/$KDIR/image-|" "$ITS" > kernel.its
+            grep incbin kernel.its
+            # reuse the official FIT's timestamp so rebuilds are byte-identical
+            export SOURCE_DATE_EPOCH=$(fdtget -t u "$KDIR/$PROFILE-kernel.bin" / timestamp)
+            echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH ($(date -ud @$SOURCE_DATE_EPOCH))"
+            "$HOST/mkimage" -f kernel.its "$KDIR/$PROFILE-kernel.bin"
+            ;;
+          lzma-loader)
+            python3 "$GITHUB_WORKSPACE/scripts/lzma-loader.py" repack \
+              "$KDIR/$PROFILE-kernel.bin" "$KDIR/vmlinux" patched.dtb "$HOST/lzma"
+            ;;
+          *) echo "unknown kernel type"; exit 1 ;;
+          esac
 
       - name: Raise IMAGE_SIZE
         if: matrix.image_size != ''
         working-directory: ib
         run: |
-          sed -i "/^define Device\/$PROFILE\$/,/^endef/ s/^\(\s*IMAGE_SIZE :=\).*/\1 ${{ matrix.image_size }}/" target/linux/mediatek/image/filogic.mk
-          sed -n "/^define Device\/$PROFILE\$/,/^endef/p" target/linux/mediatek/image/filogic.mk
-          grep -q "IMAGE_SIZE := ${{ matrix.image_size }}" target/linux/mediatek/image/filogic.mk || { echo "IMAGE_SIZE patch failed"; exit 1; }
+          MK=$(grep -l "^define Device/$PROFILE\$" target/linux/*/image/*.mk)
+          sed -i "/^define Device\/$PROFILE\$/,/^endef/ s/^\(\s*IMAGE_SIZE :=\).*/\1 ${{ matrix.image_size }}/" "$MK"
+          sed -n "/^define Device\/$PROFILE\$/,/^endef/p" "$MK"
+          grep -q "IMAGE_SIZE := ${{ matrix.image_size }}" "$MK" || { echo "IMAGE_SIZE patch failed"; exit 1; }
 
       - name: Build image
         working-directory: ib
@@ -171,9 +219,9 @@ jobs:
             cp "ib/bin/targets/$TARGET/$f" "out/${f/$PROFILE/${{ matrix.image_name }}}"
           done
           ls -l out
-          # the DTB is stored uncompressed in the FIT, so it must appear verbatim
-          python3 -c 'import sys; img=open(sys.argv[1],"rb").read(); sys.exit(img.find(open(sys.argv[2],"rb").read()) < 0)' \
-            out/*sysupgrade* ib/patched.dtb || { echo "Image does not contain the patched DTB"; exit 1; }
+          # verbatim in a FIT, or inside the LZMA stream of an lzma-loader kernel
+          python3 scripts/lzma-loader.py contains out/*sysupgrade* ib/patched.dtb \
+            || { echo "Image does not contain the patched DTB"; exit 1; }
           echo "Image contains the patched DTB"
 
       - uses: actions/upload-artifact@v7
@@ -201,12 +249,14 @@ jobs:
           cat > notes.md <<'EOF'
           Unofficial OpenWrt builds for modified hardware. Flash only the image that matches your mod.
 
-          - `*cudy_wr3000-v1-64mb-squashfs-sysupgrade.bin`: Cudy WR3000 v1 with the 16 MB NOR replaced by a **64 MB** NOR. Do NOT flash on stock 16 MB boards.
-          - `*netis_nx30u-v2-squashfs-sysupgrade.itb`: netis NX30 V2 with a **soldered USB port** (USB 2.0, VBUS on GPIO 14). Includes kmod-usb3.
+          - `*cudy_wr3000-64mb-v1-squashfs-sysupgrade.bin`: Cudy WR3000 v1 with the 16 MB NOR replaced by a **64 MB** NOR. Do NOT flash on stock 16 MB boards.
+          - `*netis_nx30-usb-v2-squashfs-sysupgrade.itb`: netis NX30 V2 with a **soldered USB port** (USB 2.0, VBUS on GPIO 14). Includes kmod-usb3.
+          - `*xiaomi_mi-router-4a-gigabit-32mb-v2-squashfs-sysupgrade.bin`: Xiaomi Mi Router 4A Gigabit Edition v2 with a **32 MB** NOR, booted by **Breed or U-Boot**. Do NOT flash on stock 16 MB boards.
+          - `*xiaomi_mi-router-4a-gigabit-64mb-v2-squashfs-sysupgrade.bin`: Xiaomi Mi Router 4A Gigabit Edition v2 with a **64 MB** NOR, booted by **U-Boot** (Breed doesn't support 64 MB). Do NOT flash on stock 16 MB boards.
 
-          Both images include LuCI. Attended Sysupgrade is intentionally left out: it would install stock images and undo the mods.
+          All images include LuCI. Attended Sysupgrade is intentionally left out: it would install stock images and undo the mods.
 
-          **Unofficial, use at your own risk, no warranty.** Not supported by OpenWrt, Cudy or netis. See the README for details. License: GPL-2.0.
+          **Unofficial, use at your own risk, no warranty.** Not supported by OpenWrt, Cudy, netis or Xiaomi. See the README for details. License: GPL-2.0.
           EOF
           gh release delete "v$VER" -R "$GITHUB_REPOSITORY" -y --cleanup-tag 2>/dev/null || true
           gh release create "v$VER" -R "$GITHUB_REPOSITORY" \

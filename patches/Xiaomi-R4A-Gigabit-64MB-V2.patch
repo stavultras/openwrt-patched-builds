@@ -1,0 +1,40 @@
+From a413fd54d8c7f5f978a7fc5569aa9e198b0f8f08 Mon Sep 17 00:00:00 2001
+From: Dmitry Mostovoy <stavultras@gmail.com>
+Date: Sun, 25 Oct 2026 07:31:54 -0400
+Subject: [PATCH] Xiaomi Mi Router 4A Gigabit Edition 64MB v2 (U-Boot)
+
+---
+ .../dts/mt7621_xiaomi_mi-router-4a-gigabit-v2.dts      | 10 ++--------
+ 1 file changed, 2 insertions(+), 8 deletions(-)
+
+diff --git a/target/linux/ramips/dts/mt7621_xiaomi_mi-router-4a-gigabit-v2.dts b/target/linux/ramips/dts/mt7621_xiaomi_mi-router-4a-gigabit-v2.dts
+index 779b878..78676be 100644
+--- a/target/linux/ramips/dts/mt7621_xiaomi_mi-router-4a-gigabit-v2.dts
++++ b/target/linux/ramips/dts/mt7621_xiaomi_mi-router-4a-gigabit-v2.dts
+@@ -6,7 +6,7 @@
+ 
+ / {
+ 	compatible = "xiaomi,mi-router-4a-gigabit-v2", "mediatek,mt7621-soc";
+-	model = "Xiaomi Mi Router 4A Gigabit Edition v2";
++	model = "Xiaomi Mi Router 4A Gigabit Edition 64MB v2";
+ 
+ 	aliases {
+ 		label-mac-device = &wan;
+@@ -49,13 +49,7 @@
+ &partitions {
+ 	partition@180000 {
+ 		// size changed against to the common dtsi
+-		reg = <0x180000 0xe70000>;
+-	};
+-
+-	partition@ff0000 {
+-		label = "Config";
+-		reg = <0xff0000 0x10000>;
+-		read-only;
++		reg = <0x180000 0x3e80000>;
+ 	};
+ };
+ 
+-- 
+2.47.3
+

@@ -1,0 +1,12 @@
+// Same changes as patches/Xiaomi-R4A-Gigabit-32MB-V2.patch, applied to the stock DTB.
+// An overlay can't delete nodes: the workflow removes partition@ff0000 ("Config") via delete_nodes.
+/dts-v1/;
+/plugin/;
+
+&{/} {
+	model = "Xiaomi Mi Router 4A Gigabit Edition 32MB v2";
+};
+
+&{/palmbus@1e000000/spi@b00/flash@0/partitions/partition@180000} {
+	reg = <0x180000 0x1e80000>;
+};
