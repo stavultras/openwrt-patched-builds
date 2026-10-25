@@ -3,3 +3,4 @@ test-images/
 *.itb
 *.bin
 sha256sums
+__pycache__/
