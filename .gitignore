@@ -4,3 +4,8 @@ test-images/
 *.bin
 sha256sums
 __pycache__/
+/bootloader/*/work/
+# ...except the bootloader binaries, which are flashed once and kept here
+!/bootloader/*/*.bin
+!/bootloader/*/*.fip
+!/bootloader/*/sha256sums

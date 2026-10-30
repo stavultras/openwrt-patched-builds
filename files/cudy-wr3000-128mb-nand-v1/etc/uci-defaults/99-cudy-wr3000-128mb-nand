@@ -1,0 +1,30 @@
+#!/bin/sh
+# The image reuses the cudy,wr3000s-v1-ubootmod board name, whose defaults are
+# for the WR3000S: 4 LAN ports and its LEDs. Fix them for the WR3000 v1.
+[ "$(cat /tmp/sysinfo/model 2>/dev/null)" = "Cudy WR3000 v1 128MB NAND" ] || exit 0
+
+for s in $(uci -q show network | sed -n "s/^network\.\([^.]*\)\.ports=.*'lan4'.*/\1/p"); do
+	uci -q del_list "network.$s.ports=lan4"
+done
+
+uci -q batch <<UCI
+set system.led_internet=led
+set system.led_internet.name='internet'
+set system.led_internet.sysfs='blue:internet'
+set system.led_internet.trigger='netdev'
+set system.led_internet.dev='wan'
+delete system.led_internet.mode
+add_list system.led_internet.mode='link'
+set system.led_wan=led
+set system.led_wan.name='wan'
+set system.led_wan.sysfs='blue:wan'
+set system.led_wan.trigger='netdev'
+set system.led_wan.dev='wan'
+delete system.led_wan.mode
+add_list system.led_wan.mode='link'
+add_list system.led_wan.mode='tx'
+add_list system.led_wan.mode='rx'
+commit network
+commit system
+UCI
+exit 0

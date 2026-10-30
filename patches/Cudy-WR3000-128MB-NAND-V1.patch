@@ -1,0 +1,77 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Mostovoy <stavultras@gmail.com>
+Date: Thu, 30 Oct 2026 01:10:00 -0400
+Subject: [PATCH] Cudy WR3000 v1 128MB NAND
+
+Cudy WR3000 v1 with the 16 MB SPI-NOR replaced by a 128 MB SPI-NAND
+(ESMT F50L1G41LB), booted by the OpenWrt BL2/U-Boot in the WR3000S v1
+ubootmod layout. Reuses the cudy,wr3000s-v1-ubootmod profile (same
+NAND layout and sysupgrade) with the WR3000 v1 LEDs and 3 LAN ports.
+
+---
+diff --git a/target/linux/mediatek/dts/mt7981b-cudy-wr3000s-v1-ubootmod.dts b/target/linux/mediatek/dts/mt7981b-cudy-wr3000s-v1-ubootmod.dts
+--- a/target/linux/mediatek/dts/mt7981b-cudy-wr3000s-v1-ubootmod.dts
++++ b/target/linux/mediatek/dts/mt7981b-cudy-wr3000s-v1-ubootmod.dts
+@@ -4,13 +4,59 @@
+ #include "mt7981b-cudy-wr3000s-v1.dtsi"
+ 
+ / {
+-	model = "Cudy WR3000S v1 (OpenWrt U-Boot layout)";
++	model = "Cudy WR3000 v1 128MB NAND";
+ 	compatible = "cudy,wr3000s-v1-ubootmod", "mediatek,mt7981";
+ 
+ 	chosen {
+ 		bootargs = "root=/dev/fit0 rootwait";
+ 		rootdisk = <&ubi_rootdisk>;
+ 	};
++
++	/* WR3000 v1 LEDs (mt7981b-cudy-wr3000-v1.dts) instead of the WR3000S ones */
++	leds {
++		/delete-node/ led-wps;
++		/delete-node/ led-wlan2g;
++		/delete-node/ led-wlan5g;
++
++		led-internet {
++			label = "blue:internet";
++		};
++
++		led-wan {
++			function = LED_FUNCTION_WAN;
++			color = <LED_COLOR_ID_BLUE>;
++			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
++		};
++
++		led-lan {
++			function = LED_FUNCTION_LAN;
++			color = <LED_COLOR_ID_BLUE>;
++			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
++		};
++
++		led-wifi2 {
++			label = "blue:wifi2";
++			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "phy0tpt";
++		};
++
++		led-wifi5 {
++			label = "blue:wifi5";
++			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "phy1tpt";
++		};
++	};
++};
++
++&led_status {
++	color = <LED_COLOR_ID_BLUE>;
++};
++
++/* WR3000 v1 has 3 LAN ports */
++&switch {
++	ports {
++		/delete-node/ port@4;
++	};
+ };
+ 
+ &ubi {
+-- 
+2.47.3

@@ -67,6 +67,29 @@ jobs:
             checks: |
               / model Cudy WR3000 64MB v1
               /soc/spi@11009000/flash@0/partitions/partition@f0000 reg 983040 66125824
+          - name: Cudy WR3000 v1 (128 MB NAND)
+            id: wr3000-128m-nand
+            target: mediatek/filogic
+            profile: cudy_wr3000s-v1-ubootmod   # same NAND layout, BL2 and sysupgrade as the WR3000S ubootmod
+            image_name: cudy_wr3000-128mb-nand-v1
+            dtb: mt7981b-cudy-wr3000s-v1-ubootmod
+            patch: patches/Cudy-WR3000-128MB-NAND-V1.patch
+            overlay: overlays/cudy-wr3000-v1-128mb-nand.dtso
+            kernel: ''                # DTB goes into the sysupgrade FIT directly
+            delete_nodes: |
+              /leds/led-wps
+              /leds/led-wlan2g
+              /leds/led-wlan5g
+              /soc/ethernet@15100000/mdio-bus/switch@1f/ports/port@4
+            image_size: ''
+            files: files/cudy-wr3000-128mb-nand-v1   # LED defaults for the WR3000 v1 LEDs
+            recovery: true            # official initramfs-recovery.itb with our DTB, for U-Boot TFTP recovery
+            packages: 'luci'
+            checks: |
+              / model Cudy WR3000 v1 128MB NAND
+              /leds/led-internet label blue:internet
+              /leds/led-wan function wan
+              /soc/spi@1100a000/flash@0/partitions/partition@5c0000 label ubi
           - name: netis NX30 v2 (USB soldered)
             id: nx30v2-usb
             target: mediatek/filogic
@@ -125,7 +148,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Install tools
-        run: sudo apt-get update && sudo apt-get install -y device-tree-compiler zstd
+        run: sudo apt-get update && sudo apt-get install -y device-tree-compiler zstd u-boot-tools
 
       # The DTB is edited with an overlay, so make sure the patch it mirrors
       # still applies to this release's DTS. If it doesn't, upstream changed
@@ -209,20 +232,39 @@ jobs:
 
       - name: Build image
         working-directory: ib
-        run: make image PROFILE="$PROFILE" PACKAGES="${{ matrix.packages }}"
+        run: |
+          make image PROFILE="$PROFILE" PACKAGES="${{ matrix.packages }}" \
+            ${{ matrix.files && format('FILES="{0}/{1}"', github.workspace, matrix.files) || '' }}
+
+      # ImageBuilder can't build initramfs images: take the official recovery
+      # image of the profile and put our DTB into it, for U-Boot's TFTP recovery
+      - name: Build recovery image
+        if: matrix.recovery
+        working-directory: ib
+        run: |
+          BASE="https://downloads.openwrt.org/releases/$VER/targets/$TARGET"
+          REC="openwrt-$VER-${TARGET/\//-}-$PROFILE-initramfs-recovery.itb"
+          curl -fLO "$BASE/$REC"
+          curl -fsSL "$BASE/sha256sums" | grep " \*$REC\$" | sha256sum -c
+          sh "$GITHUB_WORKSPACE/scripts/recovery-fit.sh" "$REC" patched.dtb \
+            "bin/targets/$TARGET/$REC" staging_dir/host/bin/mkimage
+          dumpimage -l "bin/targets/$TARGET/$REC"
 
       - name: Collect images
         run: |
           mkdir out
-          for f in ib/bin/targets/$TARGET/*"$PROFILE"*sysupgrade*; do
+          for f in ib/bin/targets/$TARGET/*"$PROFILE"*{sysupgrade,recovery}*; do
+            [ -e "$f" ] || continue
             f=$(basename "$f")
             cp "ib/bin/targets/$TARGET/$f" "out/${f/$PROFILE/${{ matrix.image_name }}}"
           done
           ls -l out
           # verbatim in a FIT, or inside the LZMA stream of an lzma-loader kernel
-          python3 scripts/lzma-loader.py contains out/*sysupgrade* ib/patched.dtb \
-            || { echo "Image does not contain the patched DTB"; exit 1; }
-          echo "Image contains the patched DTB"
+          for f in out/*; do
+            python3 scripts/lzma-loader.py contains "$f" ib/patched.dtb \
+              || { echo "$f does not contain the patched DTB"; exit 1; }
+            echo "$f contains the patched DTB"
+          done
 
       - uses: actions/upload-artifact@v7
         with:
@@ -250,6 +292,7 @@ jobs:
           Unofficial OpenWrt builds for modified hardware. Flash only the image that matches your mod.
 
           - `*cudy_wr3000-64mb-v1-squashfs-sysupgrade.bin`: Cudy WR3000 v1 with the 16 MB NOR replaced by a **64 MB** NOR. Do NOT flash on stock 16 MB boards.
+          - `*cudy_wr3000-128mb-nand-v1-squashfs-sysupgrade.itb`: Cudy WR3000 v1 with the NOR replaced by a **128 MB SPI-NAND** (ESMT F50L1G41LB), running the OpenWrt BL2/U-Boot from `bootloader/` in this repository. `*-initramfs-recovery.itb` is its TFTP recovery image. First install: see the README.
           - `*netis_nx30-usb-v2-squashfs-sysupgrade.itb`: netis NX30 V2 with a **soldered USB port** (USB 2.0, VBUS on GPIO 14). Includes kmod-usb3.
           - `*xiaomi_mi-router-4a-gigabit-32mb-v2-squashfs-sysupgrade.bin`: Xiaomi Mi Router 4A Gigabit Edition v2 with a **32 MB** NOR, booted by **Breed or U-Boot**. Do NOT flash on stock 16 MB boards.
           - `*xiaomi_mi-router-4a-gigabit-64mb-v2-squashfs-sysupgrade.bin`: Xiaomi Mi Router 4A Gigabit Edition v2 with a **64 MB** NOR, booted by **U-Boot** (Breed doesn't support 64 MB). Do NOT flash on stock 16 MB boards.
@@ -262,4 +305,4 @@ jobs:
           gh release create "v$VER" -R "$GITHUB_REPOSITORY" \
             --title "OpenWrt $VER — patched builds" \
             --notes-file notes.md \
-            *sysupgrade* sha256sums
+            *sysupgrade* *recovery* sha256sums
