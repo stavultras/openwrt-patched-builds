@@ -1,4 +1,4 @@
-// Same changes as patches/Cudy-WR3000-64MB-V1.patch, applied to the stock DTB
+// Same changes as patches/Cudy-WR3000-V1-64MB-NOR.patch, applied to the stock DTB
 /dts-v1/;
 /plugin/;
 

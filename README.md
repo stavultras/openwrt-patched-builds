@@ -13,11 +13,11 @@ with the official ImageBuilder whenever a new OpenWrt stable release appears.
 
 | Image | Board | Modification | Patch |
 |---|---|---|---|
-| `*cudy_wr3000-v1-64mb-nor-squashfs-sysupgrade.bin` | Cudy WR3000 v1 | 16 MB NOR replaced by 64 MB NOR | [patches/Cudy-WR3000-64MB-V1.patch](patches/Cudy-WR3000-64MB-V1.patch) |
-| `*cudy_wr3000-128mb-nand-v1-squashfs-sysupgrade.itb` | Cudy WR3000 v1 | 16 MB NOR replaced by 128 MB SPI-NAND (ESMT F50L1G41LB); OpenWrt BL2/U-Boot, [first install](#cudy-wr3000-v1-128-mb-nand-first-install) | [patches/Cudy-WR3000-128MB-NAND-V1.patch](patches/Cudy-WR3000-128MB-NAND-V1.patch) |
-| `*netis_nx30-v2-usb-squashfs-sysupgrade.itb` | netis NX30 V2 | USB port soldered (USB 2.0, VBUS on GPIO 14) | [patches/Netis-NX30U-v2.patch](patches/Netis-NX30U-v2.patch) |
-| `*xiaomi_mi-router-4a-gigabit-v2-32mb-squashfs-sysupgrade.bin` | Xiaomi Mi Router 4A Gigabit Edition v2 | 16 MB NOR replaced by 32 MB NOR; Breed or U-Boot | [patches/Xiaomi-R4A-Gigabit-32MB-V2.patch](patches/Xiaomi-R4A-Gigabit-32MB-V2.patch) |
-| `*xiaomi_mi-router-4a-gigabit-v2-64mb-squashfs-sysupgrade.bin` | Xiaomi Mi Router 4A Gigabit Edition v2 | 16 MB NOR replaced by 64 MB NOR; U-Boot only (Breed doesn't support 64 MB) | [patches/Xiaomi-R4A-Gigabit-64MB-V2.patch](patches/Xiaomi-R4A-Gigabit-64MB-V2.patch) |
+| `*cudy_wr3000-v1-64mb-nor-squashfs-sysupgrade.bin` | Cudy WR3000 v1 | 16 MB NOR replaced by 64 MB NOR | [patches/Cudy-WR3000-V1-64MB-NOR.patch](patches/Cudy-WR3000-V1-64MB-NOR.patch) |
+| `*cudy_wr3000-128mb-nand-v1-squashfs-sysupgrade.itb` | Cudy WR3000 v1 | 16 MB NOR replaced by 128 MB SPI-NAND (ESMT F50L1G41LB); OpenWrt BL2/U-Boot, [first install](#cudy-wr3000-v1-128-mb-nand-first-install) | [patches/Cudy-WR3000-V1-128MB-NAND.patch](patches/Cudy-WR3000-V1-128MB-NAND.patch) |
+| `*netis_nx30-v2-usb-squashfs-sysupgrade.itb` | netis NX30 V2 | USB port soldered (USB 2.0, VBUS on GPIO 14) | [patches/netis-NX30-V2-USB.patch](patches/netis-NX30-V2-USB.patch) |
+| `*xiaomi_mi-router-4a-gigabit-v2-32mb-squashfs-sysupgrade.bin` | Xiaomi Mi Router 4A Gigabit Edition v2 | 16 MB NOR replaced by 32 MB NOR; Breed or U-Boot | [patches/Xiaomi-R4A-Gigabit-V2-32MB.patch](patches/Xiaomi-R4A-Gigabit-V2-32MB.patch) |
+| `*xiaomi_mi-router-4a-gigabit-v2-64mb-squashfs-sysupgrade.bin` | Xiaomi Mi Router 4A Gigabit Edition v2 | 16 MB NOR replaced by 64 MB NOR; U-Boot only (Breed doesn't support 64 MB) | [patches/Xiaomi-R4A-Gigabit-V2-64MB.patch](patches/Xiaomi-R4A-Gigabit-V2-64MB.patch) |
 
 Download images from [Releases](../../releases). **Only flash the image matching your mod.**
 

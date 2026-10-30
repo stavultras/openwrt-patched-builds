@@ -59,7 +59,7 @@ jobs:
             profile: cudy_wr3000-v1
             image_name: cudy_wr3000-v1-64mb-nor   # replaces the profile name in the output file name
             dtb: mt7981b-cudy-wr3000-v1
-            patch: patches/Cudy-WR3000-64MB-V1.patch
+            patch: patches/Cudy-WR3000-V1-64MB-NOR.patch
             overlay: overlays/cudy-wr3000-v1-64m.dtso
             kernel: fit               # prebuilt kernel FIT embeds the DTB, rebuild it
             image_size: 64576k        # 0x3f10000 "firmware" partition, was 15424k
@@ -73,7 +73,7 @@ jobs:
             profile: cudy_wr3000s-v1-ubootmod   # same NAND layout, BL2 and sysupgrade as the WR3000S ubootmod
             image_name: cudy_wr3000-128mb-nand-v1
             dtb: mt7981b-cudy-wr3000s-v1-ubootmod
-            patch: patches/Cudy-WR3000-128MB-NAND-V1.patch
+            patch: patches/Cudy-WR3000-V1-128MB-NAND.patch
             overlay: overlays/cudy-wr3000-v1-128mb-nand.dtso
             kernel: ''                # DTB goes into the sysupgrade FIT directly
             delete_nodes: |
@@ -96,7 +96,7 @@ jobs:
             profile: netis_nx30v2
             image_name: netis_nx30-v2-usb
             dtb: mt7981b-netis-nx30v2
-            patch: patches/Netis-NX30U-v2.patch
+            patch: patches/netis-NX30-V2-USB.patch
             overlay: overlays/netis-nx30v2-usb.dtso
             kernel: ''                # DTB goes into the sysupgrade FIT directly
             image_size: ''
@@ -112,7 +112,7 @@ jobs:
             profile: xiaomi_mi-router-4a-gigabit-v2
             image_name: xiaomi_mi-router-4a-gigabit-v2-32mb
             dtb: mt7621_xiaomi_mi-router-4a-gigabit-v2
-            patch: patches/Xiaomi-R4A-Gigabit-32MB-V2.patch
+            patch: patches/Xiaomi-R4A-Gigabit-V2-32MB.patch
             overlay: overlays/xiaomi-r4a-gigabit-v2-32mb.dtso
             kernel: lzma-loader       # DTB is appended to the compressed kernel
             delete_nodes: |
@@ -128,7 +128,7 @@ jobs:
             profile: xiaomi_mi-router-4a-gigabit-v2
             image_name: xiaomi_mi-router-4a-gigabit-v2-64mb
             dtb: mt7621_xiaomi_mi-router-4a-gigabit-v2
-            patch: patches/Xiaomi-R4A-Gigabit-64MB-V2.patch
+            patch: patches/Xiaomi-R4A-Gigabit-V2-64MB.patch
             overlay: overlays/xiaomi-r4a-gigabit-v2-64mb.dtso
             kernel: lzma-loader       # DTB is appended to the compressed kernel
             delete_nodes: |

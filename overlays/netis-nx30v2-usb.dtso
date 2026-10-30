@@ -1,4 +1,4 @@
-// Same changes as patches/Netis-NX30U-v2.patch, applied to the stock DTB
+// Same changes as patches/netis-NX30-V2-USB.patch, applied to the stock DTB
 /dts-v1/;
 /plugin/;
 

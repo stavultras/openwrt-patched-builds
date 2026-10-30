@@ -1,4 +1,4 @@
-// Same changes as patches/Cudy-WR3000-128MB-NAND-V1.patch, applied to the
+// Same changes as patches/Cudy-WR3000-V1-128MB-NAND.patch, applied to the
 // stock cudy_wr3000s-v1-ubootmod DTB. Overlays can't delete nodes: the
 // workflow removes leds/led-wps, led-wlan2g, led-wlan5g and switch port@4.
 /dts-v1/;

@@ -1,7 +1,7 @@
 From 8843fd33cc0062a91bb6d765169845636a1397e2 Mon Sep 17 00:00:00 2001
 From: Dmitry Mostovoy <stavultras@gmail.com>
 Date: Wed, 21 Oct 2026 01:19:37 -0400
-Subject: [PATCH] Cudy WR3000 64MB V1
+Subject: [PATCH] Cudy WR3000 v1 64MB NOR
 
 ---
  target/linux/mediatek/dts/mt7981b-cudy-wr3000-v1.dts | 4 ++--
