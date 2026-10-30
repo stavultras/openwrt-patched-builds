@@ -3,18 +3,18 @@
 (ESMT F50L1G41LB), to write with a programmer on the first install.
 
 Layout (WR3000S v1 ubootmod, the same as BL2/U-Boot/OpenWrt expect):
-  0x000000  BL2         1 MB    bootloader/cudy-wr3000-128mb-nand-v1/*-preloader.bin
+  0x000000  BL2         1 MB    bootloader/cudy-wr3000-v1-128mb-nand/*-preloader.bin
   0x100000  u-boot-env  512 KB  empty (the environment lives in UBI)
   0x180000  Factory     2 MB    your 64 KB Factory dump (Wi-Fi calibration)
   0x380000  bdinfo      256 KB  your 64 KB bdinfo dump (MAC addresses)
-  0x3c0000  FIP         2 MB    bootloader/cudy-wr3000-128mb-nand-v1/*-bl31-uboot.fip
+  0x3c0000  FIP         2 MB    bootloader/cudy-wr3000-v1-128mb-nand/*-bl31-uboot.fip
   0x5c0000  ubi         rest    empty, or OpenWrt preinstalled with --sysupgrade
 
 Data only, no OOB (spare) area: write it with the chip's on-die ECC enabled
 (the programmer's "without spare/OOB" mode), so the chip writes the ECC itself.
 
   wr3000-nand-dump.py --factory Factory.bin --bdinfo bdinfo.bin \\
-      [--sysupgrade openwrt-...-cudy_wr3000-128mb-nand-v1-squashfs-sysupgrade.itb] \\
+      [--sysupgrade openwrt-...-cudy_wr3000-v1-128mb-nand-squashfs-sysupgrade.itb] \\
       -o wr3000-128mb-nand.bin
 """
 import argparse
@@ -25,7 +25,7 @@ import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-BOOT = os.path.join(HERE, '..', 'bootloader', 'cudy-wr3000-128mb-nand-v1')
+BOOT = os.path.join(HERE, '..', 'bootloader', 'cudy-wr3000-v1-128mb-nand')
 FLASH = 128 << 20
 PAGE, BLOCK = 2048, 128 << 10
 PARTS = {  # name: (offset, size)

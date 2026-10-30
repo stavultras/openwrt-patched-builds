@@ -270,10 +270,10 @@
 +bootcmd=if pstore check ; then run boot_recovery ; else run boot_ubi ; fi
 +bootconf=config-1
 +bootdelay=0
-+bootfile=openwrt-mediatek-filogic-cudy_wr3000-128mb-nand-v1-initramfs-recovery.itb
-+bootfile_bl2=openwrt-mediatek-filogic-cudy_wr3000-128mb-nand-v1-preloader.bin
-+bootfile_fip=openwrt-mediatek-filogic-cudy_wr3000-128mb-nand-v1-bl31-uboot.fip
-+bootfile_upg=openwrt-mediatek-filogic-cudy_wr3000-128mb-nand-v1-squashfs-sysupgrade.itb
++bootfile=openwrt-mediatek-filogic-cudy_wr3000-v1-128mb-nand-initramfs-recovery.itb
++bootfile_bl2=openwrt-mediatek-filogic-cudy_wr3000-v1-128mb-nand-preloader.bin
++bootfile_fip=openwrt-mediatek-filogic-cudy_wr3000-v1-128mb-nand-bl31-uboot.fip
++bootfile_upg=openwrt-mediatek-filogic-cudy_wr3000-v1-128mb-nand-squashfs-sysupgrade.itb
 +bootled_pwr=blue:status
 +bootled_rec=blue:internet
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60

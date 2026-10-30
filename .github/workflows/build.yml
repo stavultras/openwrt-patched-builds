@@ -71,7 +71,7 @@ jobs:
             id: wr3000-128m-nand
             target: mediatek/filogic
             profile: cudy_wr3000s-v1-ubootmod   # same NAND layout, BL2 and sysupgrade as the WR3000S ubootmod
-            image_name: cudy_wr3000-128mb-nand-v1
+            image_name: cudy_wr3000-v1-128mb-nand
             dtb: mt7981b-cudy-wr3000s-v1-ubootmod
             patch: patches/Cudy-WR3000-V1-128MB-NAND.patch
             overlay: overlays/cudy-wr3000-v1-128mb-nand.dtso
@@ -82,7 +82,7 @@ jobs:
               /leds/led-wlan5g
               /soc/ethernet@15100000/mdio-bus/switch@1f/ports/port@4
             image_size: ''
-            files: files/cudy-wr3000-128mb-nand-v1   # LED defaults for the WR3000 v1 LEDs
+            files: files/cudy-wr3000-v1-128mb-nand   # LED defaults for the WR3000 v1 LEDs
             recovery: true            # official initramfs-recovery.itb with our DTB, for U-Boot TFTP recovery
             packages: 'luci'
             checks: |
@@ -292,7 +292,7 @@ jobs:
           Unofficial OpenWrt builds for modified hardware. Flash only the image that matches your mod.
 
           - `*cudy_wr3000-v1-64mb-nor-squashfs-sysupgrade.bin`: Cudy WR3000 v1 with the 16 MB NOR replaced by a **64 MB** NOR. Do NOT flash on stock 16 MB boards.
-          - `*cudy_wr3000-128mb-nand-v1-squashfs-sysupgrade.itb`: Cudy WR3000 v1 with the NOR replaced by a **128 MB SPI-NAND** (ESMT F50L1G41LB), running the OpenWrt BL2/U-Boot from `bootloader/` in this repository. `*-initramfs-recovery.itb` is its TFTP recovery image. First install: see the README.
+          - `*cudy_wr3000-v1-128mb-nand-squashfs-sysupgrade.itb`: Cudy WR3000 v1 with the NOR replaced by a **128 MB SPI-NAND** (ESMT F50L1G41LB), running the OpenWrt BL2/U-Boot from `bootloader/` in this repository. `*-initramfs-recovery.itb` is its TFTP recovery image. First install: see the README.
           - `*netis_nx30-v2-usb-squashfs-sysupgrade.itb`: netis NX30 V2 with a **soldered USB port** (USB 2.0, VBUS on GPIO 14). Includes kmod-usb3.
           - `*xiaomi_mi-router-4a-gigabit-v2-32mb-squashfs-sysupgrade.bin`: Xiaomi Mi Router 4A Gigabit Edition v2 with a **32 MB** NOR, booted by **Breed or U-Boot**. Do NOT flash on stock 16 MB boards.
           - `*xiaomi_mi-router-4a-gigabit-v2-64mb-squashfs-sysupgrade.bin`: Xiaomi Mi Router 4A Gigabit Edition v2 with a **64 MB** NOR, booted by **U-Boot** (Breed doesn't support 64 MB). Do NOT flash on stock 16 MB boards.

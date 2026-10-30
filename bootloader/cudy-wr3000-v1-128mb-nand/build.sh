@@ -18,7 +18,7 @@ W=${WORKDIR:-$HERE/work}
 BASE=https://downloads.openwrt.org/releases/$VER/targets/mediatek/filogic
 SRC=openwrt-$VER-mediatek-filogic-cudy_wr3000s-v1-ubootmod
 RAW=https://raw.githubusercontent.com/openwrt/openwrt/v$VER/package/boot/uboot-mediatek
-NAME=openwrt-mediatek-filogic-cudy_wr3000-128mb-nand-v1
+NAME=openwrt-mediatek-filogic-cudy_wr3000-v1-128mb-nand
 
 mkdir -p "$W" && cd "$W"
 
