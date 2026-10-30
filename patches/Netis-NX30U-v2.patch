@@ -16,7 +16,7 @@ index 1e3a6b5577..80fb2ef3cc 100644
  
  / {
 -	model = "netis NX30 V2";
-+	model = "netis NX30U V2";
++	model = "netis NX30 V2 USB";
  	compatible = "netis,nx30v2", "mediatek,mt7981";
  
  	aliases {

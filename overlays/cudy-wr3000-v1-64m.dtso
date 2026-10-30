@@ -3,7 +3,7 @@
 /plugin/;
 
 &{/} {
-	model = "Cudy WR3000 64MB v1";
+	model = "Cudy WR3000 v1 64MB NOR";
 };
 
 &{/soc/spi@11009000/flash@0/partitions/partition@f0000} {

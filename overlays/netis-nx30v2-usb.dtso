@@ -3,7 +3,7 @@
 /plugin/;
 
 &{/} {
-	model = "netis NX30U V2";
+	model = "netis NX30 V2 USB";
 
 	usb_vbus: regulator-usb {
 		compatible = "regulator-fixed";

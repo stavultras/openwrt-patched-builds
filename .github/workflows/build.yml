@@ -65,7 +65,7 @@ jobs:
             image_size: 64576k        # 0x3f10000 "firmware" partition, was 15424k
             packages: 'luci'          # IB defaults lack LuCI; no luci-app-attendedsysupgrade (it would fetch stock images)
             checks: |
-              / model Cudy WR3000 64MB v1
+              / model Cudy WR3000 v1 64MB NOR
               /soc/spi@11009000/flash@0/partitions/partition@f0000 reg 983040 66125824
           - name: Cudy WR3000 v1 (128 MB NAND)
             id: wr3000-128m-nand
@@ -102,7 +102,7 @@ jobs:
             image_size: ''
             packages: 'luci kmod-usb3' # kmod-usb3 = xhci-mtk driver; add kmod-usb-storage etc. as needed
             checks: |
-              / model netis NX30U V2
+              / model netis NX30 V2 USB
               /regulator-usb regulator-name usb-vbus
               /soc/usb@11200000 status okay
               /soc/usb-phy@11e10000 status okay

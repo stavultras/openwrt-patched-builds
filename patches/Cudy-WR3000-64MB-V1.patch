@@ -16,7 +16,7 @@ index 72491d0d2e..03e6ae2035 100644
  
  / {
 -	model = "Cudy WR3000 v1";
-+	model = "Cudy WR3000 64MB v1";
++	model = "Cudy WR3000 v1 64MB NOR";
  	compatible = "cudy,wr3000-v1", "mediatek,mt7981";
  
  	aliases {
