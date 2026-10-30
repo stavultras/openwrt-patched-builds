@@ -4,7 +4,7 @@
 /plugin/;
 
 &{/} {
-	model = "Xiaomi Mi Router 4A Gigabit Edition 64MB v2";
+	model = "Xiaomi Mi Router 4A Gigabit Edition v2 64MB NOR";
 };
 
 &{/palmbus@1e000000/spi@b00/flash@0/partitions/partition@180000} {

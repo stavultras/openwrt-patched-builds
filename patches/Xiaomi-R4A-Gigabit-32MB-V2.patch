@@ -1,7 +1,7 @@
 From 44c20c520ff701c04442ec6b20a7a6531c6ad1dd Mon Sep 17 00:00:00 2001
 From: Dmitry Mostovoy <stavultras@gmail.com>
 Date: Sun, 25 Oct 2026 07:31:54 -0400
-Subject: [PATCH] Xiaomi Mi Router 4A Gigabit Edition 32MB v2 (Breed)
+Subject: [PATCH] Xiaomi Mi Router 4A Gigabit Edition v2 32MB NOR (Breed)
 
 ---
  .../dts/mt7621_xiaomi_mi-router-4a-gigabit-v2.dts      | 10 ++--------
@@ -16,7 +16,7 @@ index 779b878..e9fe732 100644
  / {
  	compatible = "xiaomi,mi-router-4a-gigabit-v2", "mediatek,mt7621-soc";
 -	model = "Xiaomi Mi Router 4A Gigabit Edition v2";
-+	model = "Xiaomi Mi Router 4A Gigabit Edition 32MB v2";
++	model = "Xiaomi Mi Router 4A Gigabit Edition v2 32MB NOR";
  
  	aliases {
  		label-mac-device = &wan;
